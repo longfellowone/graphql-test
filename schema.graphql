@@ -17,3 +17,14 @@ input TodoInput {
   title: String!
   text: String!
 }
+
+
+#mutation createTodo {
+#  createTodo(todo: {
+#    title: "Another thing I need to remember",
+#    text: "A very long text about everything I need to do"
+#  }) {
+#    title
+#    text
+#  }
+#}

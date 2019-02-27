@@ -31,6 +31,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -38,123 +39,56 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Mutation struct {
+		CreateTodo func(childComplexity int, todo TodoInput) int
+	}
+
 	Query struct {
-		Products     func(childComplexity int, distinct_on []ProductsSelectColumn, limit *int, offset *int, order_by []Products_order_by, where *Products_bool_exp) int
-		ProductsByPk func(childComplexity int, uuid string) int
+		Todos func(childComplexity int) int
+		Todo  func(childComplexity int, todoID string) int
 	}
 
-	Products struct {
-		Category func(childComplexity int) int
-		Product  func(childComplexity int) int
-		Uom      func(childComplexity int) int
-		Uuid     func(childComplexity int) int
+	Todo struct {
+		TodoId func(childComplexity int) int
+		Title  func(childComplexity int) int
+		Text   func(childComplexity int) int
 	}
 }
 
+type MutationResolver interface {
+	CreateTodo(ctx context.Context, todo TodoInput) (*Todo, error)
+}
 type QueryResolver interface {
-	Products(ctx context.Context, distinct_on []ProductsSelectColumn, limit *int, offset *int, order_by []Products_order_by, where *Products_bool_exp) ([]Products, error)
-	ProductsByPk(ctx context.Context, uuid string) (*Products, error)
+	Todos(ctx context.Context) ([]Todo, error)
+	Todo(ctx context.Context, todoID string) (*Todo, error)
 }
 
-func field_Query_products_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Mutation_createTodo_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 []ProductsSelectColumn
-	if tmp, ok := rawArgs["distinct_on"]; ok {
+	var arg0 TodoInput
+	if tmp, ok := rawArgs["todo"]; ok {
 		var err error
-		var rawIf1 []interface{}
-		if tmp != nil {
-			if tmp1, ok := tmp.([]interface{}); ok {
-				rawIf1 = tmp1
-			} else {
-				rawIf1 = []interface{}{tmp}
-			}
-		}
-		arg0 = make([]ProductsSelectColumn, len(rawIf1))
-		for idx1 := range rawIf1 {
-			err = (&arg0[idx1]).UnmarshalGQL(rawIf1[idx1])
-		}
+		arg0, err = UnmarshalTodoInput(tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["distinct_on"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["limit"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["limit"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["offset"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg2 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["offset"] = arg2
-	var arg3 []Products_order_by
-	if tmp, ok := rawArgs["order_by"]; ok {
-		var err error
-		var rawIf1 []interface{}
-		if tmp != nil {
-			if tmp1, ok := tmp.([]interface{}); ok {
-				rawIf1 = tmp1
-			} else {
-				rawIf1 = []interface{}{tmp}
-			}
-		}
-		arg3 = make([]Products_order_by, len(rawIf1))
-		for idx1 := range rawIf1 {
-			arg3[idx1], err = Unmarshalproducts_order_by(rawIf1[idx1])
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["order_by"] = arg3
-	var arg4 *Products_bool_exp
-	if tmp, ok := rawArgs["where"]; ok {
-		var err error
-		var ptr1 Products_bool_exp
-		if tmp != nil {
-			ptr1, err = Unmarshalproducts_bool_exp(tmp)
-			arg4 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["where"] = arg4
+	args["todo"] = arg0
 	return args, nil
 
 }
 
-func field_Query_products_by_pk_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Query_todo_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["uuid"]; ok {
+	if tmp, ok := rawArgs["todoID"]; ok {
 		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
+		arg0, err = graphql.UnmarshalID(tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["uuid"] = arg0
+	args["todoID"] = arg0
 	return args, nil
 
 }
@@ -217,57 +151,57 @@ func (e *executableSchema) Schema() *ast.Schema {
 func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
 	switch typeName + "." + field {
 
-	case "Query.products":
-		if e.complexity.Query.Products == nil {
+	case "Mutation.createTodo":
+		if e.complexity.Mutation.CreateTodo == nil {
 			break
 		}
 
-		args, err := field_Query_products_args(rawArgs)
+		args, err := field_Mutation_createTodo_args(rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Products(childComplexity, args["distinct_on"].([]ProductsSelectColumn), args["limit"].(*int), args["offset"].(*int), args["order_by"].([]Products_order_by), args["where"].(*Products_bool_exp)), true
+		return e.complexity.Mutation.CreateTodo(childComplexity, args["todo"].(TodoInput)), true
 
-	case "Query.products_by_pk":
-		if e.complexity.Query.ProductsByPk == nil {
+	case "Query.todos":
+		if e.complexity.Query.Todos == nil {
 			break
 		}
 
-		args, err := field_Query_products_by_pk_args(rawArgs)
+		return e.complexity.Query.Todos(childComplexity), true
+
+	case "Query.todo":
+		if e.complexity.Query.Todo == nil {
+			break
+		}
+
+		args, err := field_Query_todo_args(rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.ProductsByPk(childComplexity, args["uuid"].(string)), true
+		return e.complexity.Query.Todo(childComplexity, args["todoID"].(string)), true
 
-	case "products.category":
-		if e.complexity.Products.Category == nil {
+	case "Todo.todoID":
+		if e.complexity.Todo.TodoId == nil {
 			break
 		}
 
-		return e.complexity.Products.Category(childComplexity), true
+		return e.complexity.Todo.TodoId(childComplexity), true
 
-	case "products.product":
-		if e.complexity.Products.Product == nil {
+	case "Todo.title":
+		if e.complexity.Todo.Title == nil {
 			break
 		}
 
-		return e.complexity.Products.Product(childComplexity), true
+		return e.complexity.Todo.Title(childComplexity), true
 
-	case "products.uom":
-		if e.complexity.Products.Uom == nil {
+	case "Todo.text":
+		if e.complexity.Todo.Text == nil {
 			break
 		}
 
-		return e.complexity.Products.Uom(childComplexity), true
-
-	case "products.uuid":
-		if e.complexity.Products.Uuid == nil {
-			break
-		}
-
-		return e.complexity.Products.Uuid(childComplexity), true
+		return e.complexity.Todo.Text(childComplexity), true
 
 	}
 	return 0, false
@@ -290,7 +224,20 @@ func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinitio
 }
 
 func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefinition) *graphql.Response {
-	return graphql.ErrorResponse(ctx, "mutations are not supported")
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+		data := ec._Mutation(ctx, op.SelectionSet)
+		var buf bytes.Buffer
+		data.MarshalGQL(&buf)
+		return buf.Bytes()
+	})
+
+	return &graphql.Response{
+		Data:       buf,
+		Errors:     ec.Errors,
+		Extensions: ec.Extensions,
+	}
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
@@ -300,6 +247,72 @@ func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDe
 type executionContext struct {
 	*graphql.RequestContext
 	*executableSchema
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, mutationImplementors)
+
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createTodo":
+			out.Values[i] = ec._Mutation_createTodo(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_createTodo(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_createTodo_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateTodo(rctx, args["todo"].(TodoInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Todo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Todo(ctx, field.Selections, res)
 }
 
 var queryImplementors = []string{"Query"}
@@ -321,19 +334,19 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "products":
+		case "todos":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_products(ctx, field)
+				out.Values[i] = ec._Query_todos(ctx, field)
 				if out.Values[i] == graphql.Null {
 					invalid = true
 				}
 				wg.Done()
 			}(i, field)
-		case "products_by_pk":
+		case "todo":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_products_by_pk(ctx, field)
+				out.Values[i] = ec._Query_todo(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "__type":
@@ -352,25 +365,19 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_products(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_todos(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Query_products_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
 	rctx := &graphql.ResolverContext{
 		Object: "Query",
-		Args:   args,
+		Args:   nil,
 		Field:  field,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Products(rctx, args["distinct_on"].([]ProductsSelectColumn), args["limit"].(*int), args["offset"].(*int), args["order_by"].([]Products_order_by), args["where"].(*Products_bool_exp))
+		return ec.resolvers.Query().Todos(rctx)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -378,7 +385,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]Products)
+	res := resTmp.([]Todo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -403,7 +410,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 			}
 			arr1[idx1] = func() graphql.Marshaler {
 
-				return ec._products(ctx, field.Selections, &res[idx1])
+				return ec._Todo(ctx, field.Selections, &res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -418,11 +425,11 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_products_by_pk(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_todo(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Query_products_by_pk_args(rawArgs)
+	args, err := field_Query_todo_args(rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -436,12 +443,12 @@ func (ec *executionContext) _Query_products_by_pk(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProductsByPk(rctx, args["uuid"].(string))
+		return ec.resolvers.Query().Todo(rctx, args["todoID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Products)
+	res := resTmp.(*Todo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -449,7 +456,7 @@ func (ec *executionContext) _Query_products_by_pk(ctx context.Context, field gra
 		return graphql.Null
 	}
 
-	return ec._products(ctx, field.Selections, res)
+	return ec._Todo(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -514,6 +521,127 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	}
 
 	return ec.___Schema(ctx, field.Selections, res)
+}
+
+var todoImplementors = []string{"Todo"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Todo(ctx context.Context, sel ast.SelectionSet, obj *Todo) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, todoImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Todo")
+		case "todoID":
+			out.Values[i] = ec._Todo_todoID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "title":
+			out.Values[i] = ec._Todo_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "text":
+			out.Values[i] = ec._Todo_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Todo_todoID(ctx context.Context, field graphql.CollectedField, obj *Todo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Todo",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TodoID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalID(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Todo_title(ctx context.Context, field graphql.CollectedField, obj *Todo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Todo",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Todo_text(ctx context.Context, field graphql.CollectedField, obj *Todo) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Todo",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -1961,512 +2089,21 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.___Type(ctx, field.Selections, res)
 }
 
-var productsImplementors = []string{"products"}
-
-// nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _products(ctx context.Context, sel ast.SelectionSet, obj *Products) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, productsImplementors)
-
-	out := graphql.NewOrderedMap(len(fields))
-	invalid := false
-	for i, field := range fields {
-		out.Keys[i] = field.Alias
-
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("products")
-		case "category":
-			out.Values[i] = ec._products_category(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
-		case "product":
-			out.Values[i] = ec._products_product(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
-		case "uom":
-			out.Values[i] = ec._products_uom(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
-		case "uuid":
-			out.Values[i] = ec._products_uuid(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-
-	if invalid {
-		return graphql.Null
-	}
-	return out
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _products_category(ctx context.Context, field graphql.CollectedField, obj *Products) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "products",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Category, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _products_product(ctx context.Context, field graphql.CollectedField, obj *Products) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "products",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Product, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _products_uom(ctx context.Context, field graphql.CollectedField, obj *Products) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "products",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Uom, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _products_uuid(ctx context.Context, field graphql.CollectedField, obj *Products) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "products",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UUID, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-func Unmarshalproducts_bool_exp(v interface{}) (Products_bool_exp, error) {
-	var it Products_bool_exp
+func UnmarshalTodoInput(v interface{}) (TodoInput, error) {
+	var it TodoInput
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "and":
+		case "title":
 			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.And = make([]*Products_bool_exp, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 Products_bool_exp
-				if rawIf1[idx1] != nil {
-					ptr2, err = Unmarshalproducts_bool_exp(rawIf1[idx1])
-					it.And[idx1] = &ptr2
-				}
-			}
+			it.Title, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
-		case "not":
+		case "text":
 			var err error
-			var ptr1 Products_bool_exp
-			if v != nil {
-				ptr1, err = Unmarshalproducts_bool_exp(v)
-				it.Not = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "or":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.Or = make([]*Products_bool_exp, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 Products_bool_exp
-				if rawIf1[idx1] != nil {
-					ptr2, err = Unmarshalproducts_bool_exp(rawIf1[idx1])
-					it.Or[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "category":
-			var err error
-			var ptr1 Varchar_comparison_exp
-			if v != nil {
-				ptr1, err = Unmarshalvarchar_comparison_exp(v)
-				it.Category = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "product":
-			var err error
-			var ptr1 Varchar_comparison_exp
-			if v != nil {
-				ptr1, err = Unmarshalvarchar_comparison_exp(v)
-				it.Product = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "uom":
-			var err error
-			var ptr1 Varchar_comparison_exp
-			if v != nil {
-				ptr1, err = Unmarshalvarchar_comparison_exp(v)
-				it.Uom = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "uuid":
-			var err error
-			var ptr1 Varchar_comparison_exp
-			if v != nil {
-				ptr1, err = Unmarshalvarchar_comparison_exp(v)
-				it.UUID = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func Unmarshalproducts_order_by(v interface{}) (Products_order_by, error) {
-	var it Products_order_by
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "category":
-			var err error
-			var ptr1 OrderBy
-			if v != nil {
-				err = (&ptr1).UnmarshalGQL(v)
-				it.Category = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "product":
-			var err error
-			var ptr1 OrderBy
-			if v != nil {
-				err = (&ptr1).UnmarshalGQL(v)
-				it.Product = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "uom":
-			var err error
-			var ptr1 OrderBy
-			if v != nil {
-				err = (&ptr1).UnmarshalGQL(v)
-				it.Uom = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "uuid":
-			var err error
-			var ptr1 OrderBy
-			if v != nil {
-				err = (&ptr1).UnmarshalGQL(v)
-				it.UUID = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func Unmarshalvarchar_comparison_exp(v interface{}) (Varchar_comparison_exp, error) {
-	var it Varchar_comparison_exp
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "eq":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Eq = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "gt":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Gt = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "gte":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Gte = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "ilike":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Ilike = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "in":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.In = make([]*string, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 string
-				if rawIf1[idx1] != nil {
-					ptr2, err = graphql.UnmarshalString(rawIf1[idx1])
-					it.In[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "is_null":
-			var err error
-			var ptr1 bool
-			if v != nil {
-				ptr1, err = graphql.UnmarshalBoolean(v)
-				it.IsNull = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "like":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Like = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "lt":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Lt = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "lte":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Lte = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "neq":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Neq = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "nilike":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Nilike = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "nin":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.Nin = make([]*string, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 string
-				if rawIf1[idx1] != nil {
-					ptr2, err = graphql.UnmarshalString(rawIf1[idx1])
-					it.Nin[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "nlike":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Nlike = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "nsimilar":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Nsimilar = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "similar":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Similar = &ptr1
-			}
-
+			it.Text, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -2506,88 +2143,24 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `# query root
-type Query {
-  # fetch data from the table: "products"
-  products(
-    # distinct select on columns
-    distinct_on: [products_select_column!]
-
-    # limit the nuber of rows returned
-    limit: Int
-
-    # skip the first n rows. Use only with order_by
-    offset: Int
-
-    # sort the rows by one or more columns
-    order_by: [products_order_by!]
-
-    # filter the rows returned
-    where: products_bool_exp
-  ): [products!]!
-
-  # fetch data from the table: "products" using primary key columns
-  products_by_pk(uuid: String!): products
+	&ast.Source{Name: "schema.graphql", Input: `type Query {
+  todos: [Todo!]!
+  todo(todoID: ID!): Todo
 }
 
-# columns and relationships of "products"
-type products {
-  category: String!
-  product: String!
-  uom: String!
-  uuid: String!
+type Mutation {
+  createTodo(todo: TodoInput!): Todo
 }
 
-# select columns of table "products"
-enum products_select_column {
-  category
-  product
-  uom
-  uuid
+type Todo {
+  todoID: ID!
+  title: String!
+  text: String!
 }
 
-# ordering options when selecting data from "products"
-input products_order_by {
-  category: order_by
-  product: order_by
-  uom: order_by
-  uuid: order_by
-}
-
-# column ordering options
-enum order_by {
-  asc
-  desc
-}
-
-# Boolean expression to filter rows from the table "products". All fields are combined with a logical 'AND'.
-input products_bool_exp {
-  and: [products_bool_exp]
-  not: products_bool_exp
-  or: [products_bool_exp]
-  category: varchar_comparison_exp
-  product: varchar_comparison_exp
-  uom: varchar_comparison_exp
-  uuid: varchar_comparison_exp
-}
-
-# expression to compare columns of type varchar. All fields are combined with logical 'AND'.
-input varchar_comparison_exp {
-  eq: String
-  gt: String
-  gte: String
-  ilike: String
-  in: [String]
-  is_null: Boolean
-  like: String
-  lt: String
-  lte: String
-  neq: String
-  nilike: String
-  nin: [String]
-  nlike: String
-  nsimilar: String
-  similar: String
+input TodoInput {
+  title: String!
+  text: String!
 }
 `},
 )

@@ -2,124 +2,13 @@
 
 package graphql
 
-import (
-	"fmt"
-	"io"
-	"strconv"
-)
-
-type Products struct {
-	Category string `json:"category"`
-	Product  string `json:"product"`
-	Uom      string `json:"uom"`
-	UUID     string `json:"uuid"`
+type Todo struct {
+	TodoID string `json:"todoID"`
+	Title  string `json:"title"`
+	Text   string `json:"text"`
 }
 
-type Products_bool_exp struct {
-	And      []*Products_bool_exp    `json:"and"`
-	Not      *Products_bool_exp      `json:"not"`
-	Or       []*Products_bool_exp    `json:"or"`
-	Category *Varchar_comparison_exp `json:"category"`
-	Product  *Varchar_comparison_exp `json:"product"`
-	Uom      *Varchar_comparison_exp `json:"uom"`
-	UUID     *Varchar_comparison_exp `json:"uuid"`
-}
-
-type Products_order_by struct {
-	Category *OrderBy `json:"category"`
-	Product  *OrderBy `json:"product"`
-	Uom      *OrderBy `json:"uom"`
-	UUID     *OrderBy `json:"uuid"`
-}
-
-type Varchar_comparison_exp struct {
-	Eq       *string   `json:"eq"`
-	Gt       *string   `json:"gt"`
-	Gte      *string   `json:"gte"`
-	Ilike    *string   `json:"ilike"`
-	In       []*string `json:"in"`
-	IsNull   *bool     `json:"is_null"`
-	Like     *string   `json:"like"`
-	Lt       *string   `json:"lt"`
-	Lte      *string   `json:"lte"`
-	Neq      *string   `json:"neq"`
-	Nilike   *string   `json:"nilike"`
-	Nin      []*string `json:"nin"`
-	Nlike    *string   `json:"nlike"`
-	Nsimilar *string   `json:"nsimilar"`
-	Similar  *string   `json:"similar"`
-}
-
-type OrderBy string
-
-const (
-	OrderByAsc  OrderBy = "asc"
-	OrderByDesc OrderBy = "desc"
-)
-
-func (e OrderBy) IsValid() bool {
-	switch e {
-	case OrderByAsc, OrderByDesc:
-		return true
-	}
-	return false
-}
-
-func (e OrderBy) String() string {
-	return string(e)
-}
-
-func (e *OrderBy) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = OrderBy(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid order_by", str)
-	}
-	return nil
-}
-
-func (e OrderBy) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type ProductsSelectColumn string
-
-const (
-	ProductsSelectColumnCategory ProductsSelectColumn = "category"
-	ProductsSelectColumnProduct  ProductsSelectColumn = "product"
-	ProductsSelectColumnUom      ProductsSelectColumn = "uom"
-	ProductsSelectColumnUuid     ProductsSelectColumn = "uuid"
-)
-
-func (e ProductsSelectColumn) IsValid() bool {
-	switch e {
-	case ProductsSelectColumnCategory, ProductsSelectColumnProduct, ProductsSelectColumnUom, ProductsSelectColumnUuid:
-		return true
-	}
-	return false
-}
-
-func (e ProductsSelectColumn) String() string {
-	return string(e)
-}
-
-func (e *ProductsSelectColumn) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ProductsSelectColumn(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid products_select_column", str)
-	}
-	return nil
-}
-
-func (e ProductsSelectColumn) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
+type TodoInput struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
 }

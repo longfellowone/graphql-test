@@ -1,0 +1,87 @@
+schema {
+  query: query_root
+}
+
+# query root
+type query_root {
+  # fetch data from the table: "products"
+  products(
+    # distinct select on columns
+    distinct_on: [products_select_column!]
+
+    # limit the nuber of rows returned
+    limit: Int
+
+    # skip the first n rows. Use only with order_by
+    offset: Int
+
+    # sort the rows by one or more columns
+    order_by: [products_order_by!]
+
+    # filter the rows returned
+    where: products_bool_exp
+  ): [products!]!
+
+  # fetch data from the table: "products" using primary key columns
+  products_by_pk(uuid: String!): products
+}
+
+# columns and relationships of "products"
+type products {
+  category: String!
+  product: String!
+  uom: String!
+  uuid: String!
+}
+
+# select columns of table "products"
+enum products_select_column {
+  category
+  product
+  uom
+  uuid
+}
+
+# ordering options when selecting data from "products"
+input products_order_by {
+  category: order_by
+  product: order_by
+  uom: order_by
+  uuid: order_by
+}
+
+# column ordering options
+enum order_by {
+  asc
+  desc
+}
+
+# Boolean expression to filter rows from the table "products". All fields are combined with a logical 'AND'.
+input products_bool_exp {
+  _and: [products_bool_exp]
+  _not: products_bool_exp
+  _or: [products_bool_exp]
+  category: varchar_comparison_exp
+  product: varchar_comparison_exp
+  uom: varchar_comparison_exp
+  uuid: varchar_comparison_exp
+}
+
+# expression to compare columns of type varchar. All fields are combined with logical 'AND'.
+input varchar_comparison_exp {
+  _eq: String
+  _gt: String
+  _gte: String
+  _ilike: String
+  _in: [String]
+  _is_null: Boolean
+  _like: String
+  _lt: String
+  _lte: String
+  _neq: String
+  _nilike: String
+  _nin: [String]
+  _nlike: String
+  _nsimilar: String
+  _similar: String
+}
